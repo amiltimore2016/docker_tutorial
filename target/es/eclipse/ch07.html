@@ -1,0 +1,108 @@
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+   <title>Cap&iacute;tulo 7. Redes en Docker</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1"><link rel="home" href="index.html" title="Tutorial de Docker"><link rel="up" href="index.html" title="Tutorial de Docker"><link rel="prev" href="ch06.html" title="Cap&iacute;tulo 6. Nuestra primera aplicaci&oacute;n docker"><link rel="next" href="ch07s02.html" title="Otros tipos de redes"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a name="d0e681"></a>Cap&iacute;tulo 7. Redes en Docker</h1></div></div></div><div class="toc"><p><b>Tabla de contenidos</b></p><dl class="toc"><dt><span class="section"><a href="ch07.html#d0e759">Conectar instancia a una red especifica</a></span></dt><dt><span class="section"><a href="ch07s02.html">Otros tipos de redes</a></span></dt></dl></div><p>Cuando instalamos docker veremos que se instalan tres redes automaticamente. Para ver las redes disponibles
+	podemos usar el comando <span class="command"><strong>docker network ls</strong></span>.</p><div class="example"><a name="d0e689"></a><p class="title"><b>Ejemplo 7.1. Redes por defecto</b></p><div class="example-contents"><pre class="screen">
+	<code class="prompt">
+:# docker network ls</code>
+	<code class="computeroutput">
+NETWORK ID          NAME                DRIVER              SCOPE
+eadfabef9239        bridge              bridge              local
+100f01849e3d        host                host                local
+8ecd0fa3f1c5        none                null                local
+	</code>
+	</pre></div></div><br class="example-break"><p>
+	Cuando corremos una instancia docker esta se acopla por defecto en modo bridge a la red
+	<span class="quote">&#8220;<span class="quote">bridge</span>&#8221;</span>. Si ejecutamos el comando <span class="command"><strong>ip addr</strong></span> desde la consola del servidor
+	veremos que hay un interfaz <span class="emphasis"><em>docker0</em></span>. Este interfaz virtual puede 
+	considerarse a todos los efectos como un bridge adem&aacute;s de ser una puerta de enlace a la red exterior. 
+	</p><p>Veamos este interfaz:</p><pre class="screen">
+<code class="prompt">
+:# ip a show docker0
+</code>
+<code class="computeroutput">
+9: docker0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc noqueue state UP group default 
+    link/ether 02:42:88:66:d0:d5 brd ff:ff:ff:ff:ff:ff
+    inet 172.17.0.1/16 scope global docker0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::42:88ff:fe66:d0d5/64 scope link 
+       valid_lft forever preferred_lft forever
+</code>
+	</pre><p>Como veremos tiene la ip de la puerta de enlace de las instancias docker que hemos creado. 
+	Todas las instancias docker reciben una ip dentro de la red 172.17.0.0/16.</p><p>
+	Si inspeccionamos la red bridge con un <span class="command"><strong>docker network inspect bridge</strong></span> entednderemos
+	la relaci&oacute;n de una forma mas clara.
+	</p><div class="example"><a name="d0e728"></a><p class="title"><b>Ejemplo 7.2. Inspeccionando red bridge</b></p><div class="example-contents"><pre class="screen">
+<code class="prompt">
+:# docker network inspect bridge
+</code>
+<code class="computeroutput">
+...
+"Internal": false,
+        "Attachable": false,
+        "Containers": {
+            "3280d2431de6d927adcae5a6c36a6545baf4f91c48134965626fd68ababf2c75": {
+                "Name": "devtest",
+                "EndpointID": "d09604798b13f5b4f1a77ed2244e77e3918674da2aff5845d86914dcfe2c22a8",
+                "MacAddress": "02:42:ac:11:00:06",
+                "IPv4Address": "172.17.0.6/16",
+                "IPv6Address": ""
+            },
+            "39f0cade4978e06c45068b795cc1ed596825b6df088aa6100103f91c3979450b": {
+                "Name": "nervous_wozniak",
+                "EndpointID": "df173cf1b4bdf5381c6156d0b350e844d93ab251d90d0668baeb5e659534f669",
+                "MacAddress": "02:42:ac:11:00:03",
+                "IPv4Address": "172.17.0.3/16",
+                "IPv6Address": ""
+            },
+            "4ec3097884c40d58ca093d1c83fd6a6fe3382b8368f14553e726a882ce6efe7e": {
+                "Name": "goofy_franklin",
+                "EndpointID": "bb2966f797c3c3158d79eb9f101ca9c3a5d1df29681514aadbeb2f800bfad7da",
+                "MacAddress": "02:42:ac:11:00:05",
+                "IPv4Address": "172.17.0.5/16",
+                "IPv6Address": ""
+            },
+...
+</code>
+	</pre></div></div><br class="example-break"><p>Veremos que nuestras instancias docker est&aacute;n conectados a este bridge y 
+	las ips asignadas a cada una de ellass.
+	</p><p>Si observamos de nuevo la info del <span class="command"><strong>docker network inspect</strong></span> veremos
+	que hay un elemento del array JSON llamado <span class="quote">&#8220;<span class="quote">IPAM</span>&#8221;</span>. Este elemento define la configuraci&oacute;n
+	del tipo de conexi&oacute;n la red y la puerta de enlace.</p><pre class="screen">
+	<code class="computeroutput">
+IPAM": {
+            "Driver": "default",
+            "Options": null,
+            "Config": [
+                {
+                    "Subnet": "172.17.0.0/16",
+                    "Gateway": "172.17.0.1"
+                }
+            ]
+        },
+	</code>
+	</pre><p>En definitiva la conexi&oacute;n al exterior es en modo <span class="quote">&#8220;<span class="quote">NAT</span>&#8221;</span>.</p><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="d0e759"></a>Conectar instancia a una red especifica</h2></div></div></div><p>Muchas veces se hace necesario crear redes especializadas tipo <span class="emphasis"><em>overlay</em></span> o
+	<span class="emphasis"><em>vxlan</em></span> ya sea mediante un bridge virtual o f&iacute;sico. Para este tipo de escenario
+	se hace necesario definir a la instancia docker a que bridge conectarse. </p><p>Veamos un ejemplo de conexi&oacute;n a una red personalizad.</p><div class="example"><a name="d0e772"></a><p class="title"><b>Ejemplo 7.3. Conectarse a red personalizda.</b></p><div class="example-contents"><p>el comando <span class="command"><strong>docker run</strong></span> acepta el parametro <em class="parameter"><code>--net {NET</code></em> para 
+	definir la red a la que conectarnos.</p><pre class="screen">
+<code class="prompt">
+:# docker run -it --net host -p 80  httpd  /bin/bash
+</code>
+<code class="computeroutput">
+root@HOST:#
+</code>
+	</pre><p>En este momento estamos en la shell bash de la instancia docker de la imagen httpd.</p><p>al ser una conexi&oacute;n tipo <span class="quote">&#8220;<span class="quote">host</span>&#8221;</span> nos muestra en el prompt el nombre del anfitri&oacute;n. Vamos a
+	lanzar el servicio httpd en background.</p><pre class="screen">
+<code class="prompt">
+:# /usr/bin/httpd-foreground &amp;
+</code>
+<code class="computeroutput">
+# AH00558: httpd: Could not reliably determine the server's 
+fully qualified domain name, using 127.0.1.1. Set the 
+'ServerName' directive globally to suppress this message
+...
+</code>
+	</pre><p>
+	Ahora abriremos una consola extra en el servidor anfitri&oacute;n y usaremos elinks para ver si el servicio 
+	httpd est&aacute; expuesto en el puerto 80. P.ej. Si la ip de nuestro anfitri&oacute;n es 10.0.2.15 podemos usar el 
+	navegador de text elinks.
+	</p><p><code class="prompt">:# elinks 10.0.2.15</code> </p><div class="figure"><a name="networkhost"></a><p class="title"><b>Figura 7.1. Contenedores</b></p><div class="figure-contents"><div class="mediaobject"><table border="0" summary="manufactured viewport for HTML img" style="cellpadding: 0; cellspacing: 0;" width="80%"><tr><td><img src="resources/network-host.png" height="360" alt="Contenedores"></td></tr></table></div></div></div><br class="figure-break"></div></div><br class="example-break"></div></div></body></html>

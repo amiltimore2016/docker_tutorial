@@ -1,0 +1,28 @@
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+   <title>Cap&iacute;tulo 4. Exponiendo puertos del contenedor</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1"><link rel="home" href="index.html" title="Tutorial de Docker"><link rel="up" href="index.html" title="Tutorial de Docker"><link rel="prev" href="ch03.html" title="Cap&iacute;tulo 3. Inspeccionando Contenedores"><link rel="next" href="ch05.html" title="Cap&iacute;tulo 5. Volumenes y puntos de montaje"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a name="d0e346"></a>Cap&iacute;tulo 4. Exponiendo puertos del contenedor</h1></div></div></div><p>Para poder acceder a los servicios de una instancia de contenedor es necesario exponer puertos en el lado del host. Para esto podemos usar 
+	el parametro <code class="option">-p</code>.</p><p>Supongamos que queremos ejecutar una instancia de docker con nginx. Para ello abriremos el puerto 80 en esta instancia redirigiendo las peticiones al puerto
+	internto 8080 del docker que es donde est&aacute; escuchando el servicio nginx.</p><div class="example"><a name="d0e356"></a><p class="title"><b>Ejemplo 4.1. Exponer puertos en contenedor</b></p><div class="example-contents"><pre class="screen" width="100">
+<code class="prompt">
+:# docker run -i -t -d -p 80:8080 nginx
+</code>
+<code class="computeroutput">
+Unable to find image 'nginx:latest' locally
+latest: Pulling from library/nginx
+e7bb522d92ff: Already exists 
+6edc05228666: Pull complete 
+cd866a17e81f: Pull complete 
+Digest: sha256:285b49d42c703fdf257d1e2422765c4ba9d3e37768d6ea83d7fe2043dad6e63d
+Status: Downloaded newer image for nginx:latest
+</code>
+<code class="prompt">
+:#</code>
+<code class="prompt">
+:# docker ps</code>
+<code class="computeroutput">
+CONTAINER ID     IMAGE   COMMAND                  CREATED      STATUS        PORTS                          NAMES
+4ec3097884c4     nginx   "nginx -g 'daemon ..."   4 seconds a  Up 2 seconds  80/tcp, 0.0.0.0:80-&gt;8080/tcp   goofy_franklin
+</code>
+</pre></div></div><br class="example-break"><p>Observaremos mediante el comando <span class="command"><strong>docker ps</strong></span> que la columna  <span class="emphasis"><em>PORTS</em></span> contiene informaci&oacute;n 
+describiendo en primer lugar la ip de escucha, seguido por el 
+puerto interno del docker que en este caso se encutra redirigido al puerto 80 del lado del sistema anfitri&oacute;n. </p><p>Es decir, docker est&aacute; redirigiendo las peticines externas del puerto 80 en el anfitrion al puerto interno 8080 de esta instancia.</p></div></body></html>

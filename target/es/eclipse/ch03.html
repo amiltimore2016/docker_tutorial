@@ -1,0 +1,90 @@
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+   <title>Cap&iacute;tulo 3. Inspeccionando Contenedores</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1"><link rel="home" href="index.html" title="Tutorial de Docker"><link rel="up" href="index.html" title="Tutorial de Docker"><link rel="prev" href="ch02.html" title="Cap&iacute;tulo 2. Primeros pasos, docker corriendo"><link rel="next" href="ch04.html" title="Cap&iacute;tulo 4. Exponiendo puertos del contenedor"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a name="d0e247"></a>Cap&iacute;tulo 3. Inspeccionando Contenedores</h1></div></div></div><p>
+	Bien, como los contenedores son procesos de usuario ejecutandose en el sistema, es muy dificil saber lo que ocurre dentro de este
+	contenedor, especialmente cuando no lo hemos lanzado o creado nosotros.</p><p>Podr&iacute;amos acoplarnos a las instancias docker corriendo con el comando <span class="command"><strong>docker attach {docker instance}</strong></span>
+	Pero esto implicar&iacute;a eliminar la instancia al teclear la orden exit. Evidentemente no queremos hacer esto en un entorno productivo.
+	</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Nota]" src="assets/images/note.svg"></td><th align="left">Nota</th></tr><tr><td align="left" valign="top"><p>Es posible desacoplarse de una instancia docker usando la combinaci&oacute;n de teclas
+	<span class="command"><strong>CTRL-p CTRL-q</strong></span>. Pero si no tenemos cuidado con esta secuencia de comandos nos 
+	podriamos volatilizar la instancia.
+	</p></td></tr></table></div><p>
+	Para atajar este problem podemos recurrir al comando <span class="command"><strong>docker inspect {CONTAINER ID}</strong></span>.
+	</p><div class="example"><a name="d0e268"></a><p class="title"><b>Ejemplo 3.1. Inspeccionar contenedores</b></p><div class="example-contents"><pre class="screen">
+<code class="prompt">
+:# docker inspect bebde9e8efe9
+</code>
+<code class="computeroutput">
+[
+    {
+        "Id": "bebde9e8efe9fe3db00b2b3dc192881ee0ead7c365e24d1c4a810c2a8767bb73",
+        "Created": "2018-01-24T13:54:03.71350842Z",
+        "Path": "/bin/bash",
+        "Args": [],
+        "State": {
+            "Status": "running",
+            "Running": true,
+            "Paused": false,
+            "Restarting": false,
+            "OOMKilled": false,
+            "Dead": false,
+...
+	
+</code>
+	</pre></div></div><br class="example-break"><p>
+	Este comando nos mostrar&aacute; una ingente cantidad de informaci&oacute;n en formato JSON array. Si queremos 
+	filtrar estar informaci&oacute;n para buscar un dato espec&iacute;fico como, p.ej la IP podemos a&ntilde;adir el parametro <code class="option">--format</code> 
+	combinado con unos selectores que nos permiten filtrar ciertas variables del array JSON.
+	</p><pre class="screen">
+<code class="prompt">
+:# docker inspect --format='{{range .NetworkSettings.Networks}}\
+	 {{.IPAddress}}{{end}}' bebde9e8efe9
+</code>
+<code class="computeroutput">
+172.17.0.2
+</code>
+	</pre><p>
+	Otro comando interesante es <span class="command"><strong>docker logs</strong></span>; que nos permite ver los logs del 
+	contenedor en ejecuci&oacute;n:
+	</p><div class="example"><a name="d0e297"></a><p class="title"><b>Ejemplo 3.2. Ver logs del docker</b></p><div class="example-contents"><pre class="screen">
+	<code class="prompt">
+:# docker run --name test -d busybox sh -c "while true; do $(echo date);\
+sleep 1; done"</code>
+<code class="computeroutput">  
+Unable to find image 'busybox:latest' locally
+latest: Pulling from library/busybox
+57310166fe88: Pull complete 
+Digest: sha256:dc57f405b06f43c4573ef0368652af95bafde23ec5430efd202b736909009758
+Status: Downloaded newer image for busybox:latest
+59ccf0c14edeaf5fb9f8f7b1dde393167de43cd59727370e31d75d49ab8d5e3a
+</code>
+<code class="prompt">
+:# docker ps
+</code>
+<code class="computeroutput">
+CONTAINER ID        IMAGE          COMMAND                  CREATED             STATUS              PORTS   NAMES
+59ccf0c14ede        busybox        "sh -c 'while true..."   3 seconds ago       Up 2 seconds                test
+bebde9e8efe9        ubuntu         "/bin/bash"              21 minutes ago      Up 21 minutes               elated_sinoussi
+</code>
+<code class="prompt">
+:# docker logs 59ccf0c14ede
+</code>
+<code class="computeroutput">
+Wed Jan 24 14:15:06 UTC 2018
+Wed Jan 24 14:15:07 UTC 2018
+Wed Jan 24 14:15:08 UTC 2018
+Wed Jan 24 14:15:09 UTC 2018
+...
+	</code>
+	</pre></div></div><br class="example-break"><p>
+	Como vemos aqu&iacute;, el comando <span class="command"><strong>docker logs {CONTAINER ID}</strong></span> arroja un log con
+	la actividad del container. 
+	</p><p>Si realmente queremos acoplarnos a una instancia de docker y tener consola para poder interactuar con el sistema podemos 
+	usar el comando <span class="command"><strong>docker exec</strong></span>  </p><div class="example"><a name="d0e330"></a><p class="title"><b>Ejemplo 3.3. Acceder a consola instancia docker</b></p><div class="example-contents"><pre class="screen">
+	<code class="prompt">
+:# docker exec -i -t bebde9e8efe9 /bin/bash
+	</code>
+<code class="computeroutput">
+root@bebde9e8efe9:/# 
+</code>
+	</pre></div></div><br class="example-break"><p>El cambio en el prompt nos indicar&aacute; que estamos ejecutando bash en la instancia docker. Cuando hayamos terminado podemos teclear la
+	orden <span class="emphasis"><em>exit</em></span>. La instancia docker seguir&aacute; corriendo desacoplada.</p></div></body></html>

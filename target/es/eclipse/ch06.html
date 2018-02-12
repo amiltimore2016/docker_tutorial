@@ -1,0 +1,123 @@
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+   <title>Cap&iacute;tulo 6. Nuestra primera aplicaci&oacute;n docker</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1"><link rel="home" href="index.html" title="Tutorial de Docker"><link rel="up" href="index.html" title="Tutorial de Docker"><link rel="prev" href="ch05.html" title="Cap&iacute;tulo 5. Volumenes y puntos de montaje"><link rel="next" href="ch07.html" title="Cap&iacute;tulo 7. Redes en Docker"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a name="d0e500"></a>Cap&iacute;tulo 6. Nuestra primera aplicaci&oacute;n docker</h1></div></div></div><p>Para entender de una manera pr&aacute;ctica Docker vamos a crear una instancia de una aplicaci&oacute;n web plenamente 
+	funcional.</p><div class="procedure"><a name="d0e505"></a><p class="title"><b>Procedimiento 6.1. Aplicaci&oacute;n web</b></p><ol class="procedure" type="1"><li class="step"><p>Primero crearemos una carpeta llamada <code class="filename">docker_web</code></p><p>
+	<span class="command"><strong>:# mkdir docker_web</strong></span>
+	</p><p>Nos posicionamos dentro de este direcotorio con un</p><p> 
+	<span class="command"><strong>:# cd docker_web</strong></span>
+	</p></li><li class="step"><p>
+	Creamos un archivo Dockefile
+	
+	</p><p>
+	<span class="command"><strong>vim Dockerfile</strong></span>
+	</p><div class="example-float"><div class="example"><a name="example1.Dockerfile"></a><p class="title"><b>Ejemplo 6.1. Dockerfile</b></p><div class="example-contents"><pre class="programlisting"># A basic apache server. To use either add or bind mount content under /var/www
+FROM ubuntu:latest
+
+MAINTAINER Antonio Medina: 1.0
+ENV HTTP_PROXY 'http://web-proxy.sgp.hp.com:8080'
+ENV HTTPS_PROXY 'http://web-proxy.sgp.hp.com:8080'
+COPY resolv.sh /tmp/resolv.sh
+RUN chmod +x /tmp/resolv.sh
+RUN /tmp/resolv.sh
+COPY 95proxy /etc/apt/apt.conf.d/95proxy
+COPY entry.sh /usr/bin/entry.sh
+RUN  chmod +x /usr/bin/entry.sh
+RUN apt-get update &amp;&amp; apt-get install -y apache2 &amp;&amp; apt-get clean \ 
+&amp;&amp; rm -rf /var/lib/apt/lists/*
+
+ENV APACHE_RUN_USER www-data
+ENV APACHE_RUN_GROUP www-data
+ENV APACHE_LOG_DIR /var/log/apache2
+ENV APACHE_LOCK_DIR=/var/run
+ENV APACHE_PID_FILE=/var/tmp/apache.pid
+
+EXPOSE 80
+
+CMD ["/usr/sbin/apache2", "-D", "FOREGROUND"]
+ENTRYPOINT ["/usr/bin/entry.sh"]
+</pre></div></div><br class="example-break"></div></li><li class="step"><p>Creamos el script de configuraci&oacute;n del proxy para que la instancia docker pueda actulizarse e instalar los paquetes necesarios.</p><p><span class="command"><strong>vim 95proxy</strong></span></p><div class="example"><a name="example1.95proxy"></a><p class="title"><b>Ejemplo 6.2. 95proxy</b></p><div class="example-contents"><pre class="programlisting">Acquire::http::proxy "http://16.153.99.11:8080";
+Acquire::ftp::proxy "ftp://16.153.99.11:8080";
+</pre></div></div><br class="example-break"></li><li class="step"><p>Creamos el script <code class="filename">resolv.sh</code> que modificar&aacute; el <code class="filename">/etc/resolv.conf</code> para que se adapte a la red con proxy.</p><div class="example"><a name="example1.resolv.sh"></a><p class="title"><b>Ejemplo 6.3. resolv.sh</b></p><div class="example-contents"><pre class="programlisting">#!/bin/bash
+echo "nameserver 16.110.135.51" &gt; /etc/resolv.conf
+</pre></div></div><br class="example-break"></li><li class="step"><p>Creamos el script <code class="filename">entry.sh</code> que se encargar&aacute; de arrancar el apache automaticamente cada vez que creemos una instancia de esta imagen docker.</p><div class="example"><a name="example1.entry.sh"></a><p class="title"><b>Ejemplo 6.4. entry.sh</b></p><div class="example-contents"><pre class="programlisting">#!/bin/bash
+
+export APACHE_RUN_USER=www-data
+export APACHE_RUN_GROUP=www-data
+export APACHE_LOG_DIR=/var/log/apache2
+export APACHE_LOCK_DIR=/var/run
+export APACHE_PID_FILE=/var/tmp/apache.pid
+
+/usr/sbin/apache2 -D "FOREGROUND"
+</pre></div></div><br class="example-break"></li><li class="step"><p>Lanzamos el proceso de creaci&oacute;n del contenedor:</p><div class="example"><a name="d0e577"></a><p class="title"><b>Ejemplo 6.5. Creaci&oacute;n de un contenedor</b></p><div class="example-contents"><pre class="screen">
+	<code class="prompt">
+:# docker build .  # El punto es necesario.
+</code>
+	<code class="computeroutput">
+Sending build context to Docker daemon 6.656 kB
+Step 1/19 : FROM ubuntu:latest
+ ---&gt; 2a4cca5ac898
+Step 2/19 : MAINTAINER Antonio Medina: 1.0
+ ---&gt; Using cache
+ ---&gt; a8ec2d0857be
+Step 3/19 : ENV HTTP_PROXY 'http://web-proxy.sgp.hp.com:8080'
+ ---&gt; Using cache
+ ---&gt; 162ebdc08bfb
+Step 4/19 : ENV HTTPS_PROXY 'http://web-proxy.sgp.hp.com:8080'
+ ---&gt; Using cache
+ ---&gt; 7486ee9f29ee
+Step 5/19 : COPY resolv.sh /tmp/resolv.sh
+ ---&gt; Using cache
+ ---&gt; 33b81e4888b0
+....
+Step 18/19 : CMD /usr/sbin/apache2 -D FOREGROUND
+ ---&gt; Using cache
+ ---&gt; a10fc4c80db0
+Step 19/19 : ENTRYPOINT /usr/bin/entry.sh
+ ---&gt; Using cache
+ ---&gt; 3977cff94b2d
+Successfully built 3977cff94b2d
+:#
+	</code>
+	</pre></div></div><br class="example-break"><p>Tomamos nota del id en <span class="emphasis"><em>Successfully built</em></span> <span class="quote">&#8220;<span class="quote">3977cff94b2d</span>&#8221;</span></p><p>Este es el id de nuestro build y nos servir&aacute; para lanzar nuestro flamante servidor web.</p></li><li class="step"><p>Para poder lanzar esta imagen y dejarlo corriendo como si fuera un demonio lo lanzaremos con la opci&oacute;n <code class="option">-d</code> que lanzara la instancia de la imag&eacute;n en modo desacoplado.</p><div class="example"><a name="d0e603"></a><p class="title"><b>Ejemplo 6.6. Lanzar instancia docker desacoplada</b></p><div class="example-contents"><pre class="screen">
+<code class="prompt">
+:# docker run -t -i -d 3977cff94b2d
+</code>
+	<code class="computeroutput">
+a18f7588675f791a3b6f2e93e51f624019adc7a76647f70567c0a82fc48e2d6d
+:#
+	</code>
+	</pre></div></div><br class="example-break"><p>Este comando nos devolver&aacute; un identificador de la instancia que acabamos de lanzar.</p><p>Si lanzamos el comando <span class="command"><strong>docker ps</strong></span> ahora veremos que hay una instancia con id <span class="emphasis"><em>a18f7588675f</em></span> corriendo con id de imagen <span class="emphasis"><em>3977cff94b2d</em></span></p></li><li class="step"><p>Ahora debemos validar que esta nueva instancia de ubuntu con apache est&aacute; realmente atendiendo peticiones en el puerto 80 con el comando wget o curl. Para ello debemos de averiguar
+	que ip tiene esta instancia mediante el comando <span class="command"><strong>docker inspect</strong></span> .</p><div class="example"><a name="d0e632"></a><p class="title"><b>Ejemplo 6.7. Docker inspect</b></p><div class="example-contents"><pre class="screen">
+	<code class="prompt">
+:#docker inspect --format='{{range .NetworkSettings.Networks}}\
+&gt;  {{.IPAddress}}{{end}}' a18f7588675f</code>
+	<code class="computeroutput">
+172.17.0.2
+    </code>
+ 	</pre></div></div><br class="example-break"><div class="example"><a name="d0e643"></a><p class="title"><b>Ejemplo 6.8. Testear servicio web</b></p><div class="example-contents"><pre class="screen">
+<code class="prompt">
+:# wget 172.17.0.2
+</code>
+
+<code class="computeroutput">
+--2018-01-29 15:31:40--  http://172.17.0.2/
+Connecting to 172.17.0.2:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 11321 (11K) [text/html]
+Saving to: &#8216;index.html.1&#8217;
+
+index.html.1                       100%[=========&gt;]  11,06K  --.-KB/s    in 0s      
+
+2018-01-29 15:31:40 (171 MB/s) - &#8216;index.html.1&#8217; saved [11321/11321]
+</code>
+ 	</pre></div></div><br class="example-break"><p>
+ 	Si hacemos un cat del archivo <code class="filename">index.html.1</code> veremos que es la pagina de inicio de un servidor apache reci&eacute;n instalado.
+ 	</p></li><li class="step"><p>Para validar que realmente nos estamos conectando a la instancia de esta imagen vamos a modificar el index.html dentro de la instancia actual.</p><div class="example"><a name="d0e662"></a><p class="title"><b>Ejemplo 6.9. Copiar archivo a container</b></p><div class="example-contents"><pre class="screen">
+	<code class="prompt">
+:# echo "HELLO from container a18f7588675f" &gt; index.html	
+	</code>
+	<code class="prompt">
+:# docker cp index.html a18f7588675f:/var/www/html/index.html
+	</code>
+
+	</pre></div></div><br class="example-break"><p>En este ejemplo voy a usar elinks, un navegador de texto.</p><p><code class="prompt">elinks 172.17.0.2</code></p><div class="mediaobject"><table border="0" summary="manufactured viewport for HTML img" style="cellpadding: 0; cellspacing: 0;" width="80%"><tr><td><img src="resources/hello_container.png" height="360"></td></tr></table></div></li></ol></div></div></body></html>

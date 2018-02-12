@@ -1,0 +1,13 @@
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+   <title>Otros tipos de redes</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1"><link rel="home" href="index.html" title="Tutorial de Docker"><link rel="up" href="ch07.html" title="Cap&iacute;tulo 7. Redes en Docker"><link rel="prev" href="ch07.html" title="Cap&iacute;tulo 7. Redes en Docker"><link rel="next" href="ch08.html" title="Cap&iacute;tulo 8. Docker Swarms"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="d0e818"></a>Otros tipos de redes</h2></div></div></div><p>Al ejecutar el comando  <span class="command"><strong>docker network ls</strong></span> se nos han mostrado dos redes extras: 
+	<span class="emphasis"><em>none</em></span> y <span class="emphasis"><em>host</em></span>. Describir&eacute; brevemente estas dos redes.
+	</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p>La red <span class="emphasis"><em>none</em></span> se puede considerar una red <span class="quote">&#8220;<span class="quote">null</span>&#8221;</span> donde la
+	instancia docker no tendr&iacute;a conectividad externa. El comando <span class="command"><strong>docker network inspect none</strong></span>
+	nos mostrar&iacute;a que las instancias conectadas a esta red no tienen IP. 
+	</p></li><li class="listitem"><p>
+	La red <span class="emphasis"><em>host</em></span> es una red donde los puertos asignados a la instancia docker se asignarian
+	directamente a la ip del servidor anfitri&oacute;n. Si lanzaramos una instancia docker de apache escuchando
+	en el puerto 80 ser&iacute;a como una instancia apache corriendo nativamente en nuestro servidor anfitri&oacute;n.
+	</p></li></ol></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Nota]" src="assets/images/note.svg"></td><th align="left">Nota</th></tr><tr><td align="left" valign="top"><p>Es interesante tener en cuenta que docker usa <span class="productname">iptables</span> para 
+	redirigir puertos desde la maquina anfitri&oacute;n a la instancia que ha solicitado un mapeo de puertos.</p></td></tr></table></div></div></body></html>

@@ -1,0 +1,114 @@
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+   <title>Cap&iacute;tulo 2. Primeros pasos, docker corriendo</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1"><link rel="home" href="index.html" title="Tutorial de Docker"><link rel="up" href="index.html" title="Tutorial de Docker"><link rel="prev" href="ch01.html" title="Cap&iacute;tulo 1. Introducci&oacute;n"><link rel="next" href="ch03.html" title="Cap&iacute;tulo 3. Inspeccionando Contenedores"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a name="d0e91"></a>Cap&iacute;tulo 2. Primeros pasos, docker corriendo</h1></div></div></div><p>
+	Antes de nada, la primero que debemos hacer es validar que docker est&aacute; habilitado y funcionando:
+	</p><p>
+	<span class="command"><strong>docker ps</strong></span>
+	</p><div class="example"><a name="d0e101"></a><p class="title"><b>Ejemplo 2.1. &iquest;Docker corriendo?</b></p><div class="example-contents"><pre class="screen">
+    <code class="prompt">
+:# docker ps</code>
+    <code class="computeroutput"> 
+CONTAINER ID   IMAGE  COMMAND CREATED  STATUS  PORTS NAMES
+    </code> 
+	</pre></div></div><br class="example-break"><p>
+	Esta salida nos indicar&aacute; que el servicio docker est&aacute; corriendo y activo, sin embargo no hay instancias de imagenes docker corriendo.
+	</p><p>
+	Una vez que tenemos el servicio docker corriendo podemos validar su correcto funcionamiento lanzando el docker <span class="quote">&#8220;<span class="quote">hello world</span>&#8221;</span>
+	</p><div class="example"><a name="d0e119"></a><p class="title"><b>Ejemplo 2.2. Docker test run</b></p><div class="example-contents"><pre class="screen">
+    <code class="prompt">
+:# docker run hello-world</code>
+    <code class="computeroutput"> 
+Unable to find image 'hello-world:latest' locally
+latest: Pulling from library/hello-world
+ca4f61b1923c: Pull complete 
+Digest: sha256:66ef312bbac49c39a89aa9bcc3cb4f3c9e7de3788c944158df3ee0176d32b751
+Status: Downloaded newer image for hello-world:latest
+
+Hello from Docker!
+This message shows that your installation appears to be working correctly.
+
+To generate this message, Docker took the following steps:
+    </code>
+	</pre></div></div><br class="example-break"><p>
+	El texto es bastante aclarativo; nos indica que el proceso de lanzamiento de instancias docker funciona correctamente.
+	</p><p>
+	 Con el comando <span class="command"><strong>docker ps -a</strong></span> podemos averiguar el historial de instancias docker ejecutadas.
+	</p><div class="example"><a name="d0e137"></a><p class="title"><b>Ejemplo 2.3. Historial de docker</b></p><div class="example-contents"><p>
+	</p><pre class="screen">
+ <code class="prompt">
+:# docker ps -a
+ </code>   
+    <code class="computeroutput">
+CONTAINER ID    IMAGE         COMMAND   CREATED         STATUS     PORTS  NAMES
+8a1994a60831    hello-world   "/hello"  31 minutes ago  Exited (0)        nifty_liskov
+ 
+    </code>
+	</pre><p>
+	</p></div></div><br class="example-break"><p>
+	Docker usa un sistema de archivos <span class="emphasis"><em>layered</em></span> o por <span class="emphasis"><em>"capas"</em></span>. Esto quiere decir que cada vez que 
+	corremos una imagen o container los cambios implementados en esa instancia se escriben al archivo de esa instancia.
+	Para entender un poco mejor este concepto, podemos visualizar un sistema de archivos que solo escribe los cambios incrementales a disco.
+	y cuando termina deja un identificador que nos permite recuperar esos cambios. Este identificador es un hash &uacute;nico que corresponde a
+	la columna <span class="quote">&#8220;<span class="quote">CONTAINER ID</span>&#8221;</span>
+	</p><p>
+	Veamos un ejemplo:
+	</p><div class="example"><a name="d0e164"></a><p class="title"><b>Ejemplo 2.4. Capas de docker</b></p><div class="example-contents"><pre class="screen"> 
+<code class="prompt"> 
+:# docker run -it ubuntu  /bin/bash
+</code>
+
+<code class="computeroutput"> 
+Unable to find image 'ubuntu:latest' locally
+latest: Pulling from library/ubuntu
+8f7c85c2269a: Pull complete 
+9e72e494a6dd: Pull complete 
+3009ec50c887: Pull complete 
+9d5ffccbec91: Pull complete 
+e872a2642ce1: Pull complete 
+Digest: sha256:d3fdf5b1f8e8a155c17d5786280af1f5a04c10e95145a515279cf17abdf0191f
+Status: Downloaded newer image for ubuntu:latest
+<code class="prompt">
+root@5a0bbc6a2b4c:/# exit
+</code> 
+    </code>
+ 	</pre></div></div><br class="example-break"><p>
+	Este comando nos pondr&aacute; en la shell bash de una imagen ubuntu/latest. 
+	Si observamos el proceso atentamente veremos que docker    construye la imagen a base de capas. 
+	Desde la capa <span class="emphasis"><em>thin</em></span>  8f7c85c2269a 
+    a la capa final que construye el ubuntu <span class="quote">&#8220;<span class="quote">latest</span>&#8221;</span> e872a2642ce1.
+	</p><div class="figure"><a name="layers"></a><p class="title"><b>Figura 2.1. Contenedores</b></p><div class="figure-contents"><div class="mediaobject"><table border="0" summary="manufactured viewport for HTML img" style="cellpadding: 0; cellspacing: 0;" width="80%"><tr><td><img src="resources/sharing-layers.png" height="360" alt="Contenedores"></td></tr></table></div></div></div><br class="figure-break"><p>
+	Al observar el prompt de la consola notaremos que este ha cambiado, ahora es <span class="quote">&#8220;<span class="quote">root@5a0bbc6a2b4c:/#</span>&#8221;</span>. En este momento 
+	estamos corriendo el proceso /bin/bash dentro del container ubuntu:latest. Al ejecutar el comando ps veremos que solo hay un proceso 
+	corriendo adem&aacute;s del ps, el /bin/bash.
+	 </p><p>
+	</p><pre class="screen">
+    <code class="prompt">
+root@41e50f369f07:/# ps -afe
+    </code>
+    <code class="computeroutput">
+UID        PID  PPID  C STIME TTY          TIME CMD
+root         1     0  0 10:10 ?        00:00:00 /bin/bash
+root        10     1  0 10:11 ?        00:00:00 ps -afe
+	</code>
+	<code class="prompt">
+root@41e50f369f07:/#</code> 
+    </pre><p>
+    </p><p>
+    Muy importante recordar que los containers tienen propiedades muy similares a las de un <span class="emphasis"><em>proceso</em></span> unix. 
+    Por lo tanto cuando ejecutemos el comando <span class="command"><strong>exit</strong></span> el contenedor <span class="emphasis"><em>ubuntu:latest</em></span> 
+    terminar&aacute; su ejecuci&oacute;n.
+    Podemos proceder a salir de docker con el comando <span class="command"><strong>exit</strong></span>.
+    </p><p>
+    si tecleamos el comando <span class="command"><strong>docker ps</strong></span> veremos que no hay instancias docker corriendo. Ahora bien si tecleamos
+    el comando <span class="command"><strong>docker ps -a</strong></span> veremos en el historial que una imagen corri&oacute; recientemente, en mi caso <span class="quote">&#8220;<span class="quote">silly_blackwell</span>&#8221;</span>
+    </p><p>
+	</p><pre class="screen">
+	<code class="prompt">
+:# docker ps -a</code>
+   <code class="computeroutput"> 
+CONTAINER ID   IMAGE         COMMAND      CREATED          STATUS                     NAMES
+41e50f369f07   ubuntu        "/bin/bash"  6 minutes ago    Exited (0) 4 seconds ago   silly_blackwell
+239bb146bb24   hello-world   "/hello"     20 minutes ago   Exited (0) 20 minutes ago  focused_aryabhata
+    </code>
+	</pre><p>
+	</p></div></body></html>

@@ -1,0 +1,63 @@
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+   <title>Creando el Swarm</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1"><link rel="home" href="index.html" title="Tutorial de Docker"><link rel="up" href="ch08.html" title="Cap&iacute;tulo 8. Docker Swarms"><link rel="prev" href="ch08s02.html" title="Preparando el entorno Docker Swarm"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="d0e957"></a>Creando el Swarm</h2></div></div></div><p>Una vez que hemos preparado todo el entorno procederemos a crear el <span class="emphasis"><em>Swarm</em></span>.</p><p>Una vez mas validaremos que el demonio docker est&aacute; corriendo.</p><div class="procedure"><ol class="procedure" type="1"><li class="step"><p>Nos conectamos al <span class="emphasis"><em>manager</em></span> mediante ssh.</p><div class="example"><a name="d0e974"></a><p class="title"><b>Ejemplo 8.1. </b></p><div class="example-contents"><pre class="screen">
+<strong class="userinput"><code>
+:# ssh manager</code></strong>
+</pre></div></div><br class="example-break"></li><li class="step"><p>Creamos el docker swarm con el siguiente comando:</p><div class="example"><a name="d0e983"></a><p class="title"><b>Ejemplo 8.2. Iniciar el swarm</b></p><div class="example-contents"><pre class="screen">
+<strong class="userinput"><code>
+:# docker swarm init --advertise-addr {MANAGER-IP}</code></strong>
+<code class="computeroutput">
+Swarm initialized: current node (dxn1zf6l61qsb1josjja83ngz) is now a manager.
+
+To add a worker to this swarm, run the following command:
+
+    docker swarm join \
+    --token SWMTKN-1-49nj1cmql0jkz5s954yi3oex3nedyz0fb0xx14ie39trti4wxv- \
+    8vxv8rssmk743ojnwacrr2e7c \
+    {MANAGER-IP}:2377
+
+To add a manager to this swarm, run 'docker swarm join-token manager'
+and follow the instructions.
+
+</code>
+</pre></div></div><br class="example-break"><p>Donde MANAGER-IP corresponde a la ip del servidor linux que hemos designado como manager.</p></li><li class="step"><p>Validamos estado del nodo.
+</p><div class="example"><a name="d0e999"></a><p class="title"><b>Ejemplo 8.3. Validar estado del Nodo</b></p><div class="example-contents"><p>Para validar que el nodo manager est&aacute; activo tecleamos el siguiente comando:</p><pre class="screen">
+<strong class="userinput"><code>
+:# docker info | grep "Is Manager"
+</code></strong>
+<code class="computeroutput">
+Is Manager: true
+</code>
+</pre></div></div><br class="example-break"></li><li class="step"><p>Validamos estado del cluster</p><div class="example"><a name="d0e1015"></a><p class="title"><b>Ejemplo 8.4. Validar Swarm Manager</b></p><div class="example-contents"><p>Desde el manager lanzamos el siguiente comando:</p><pre class="screen">
+<strong class="userinput"><code>:# docker node ls</code></strong>
+<code class="computeroutput">
+ID                           HOSTNAME               STATUS  AVAILABILITY  MANAGER STATUS
+827xewu2yffsrmdhfm9qbur4n *  manager                Ready   Active        Leader
+
+
+</code>
+</pre></div></div><br class="example-break"></li><li class="step"><p>Nos conectamos a los nodos <span class="emphasis"><em>worker</em></span> y los a&ntilde;adimos al <span class="emphasis"><em>swarm</em></span>.</p><div class="example"><a name="d0e1037"></a><p class="title"><b>Ejemplo 8.5. A&ntilde;adir workers</b></p><div class="example-contents"><pre class="screen">
+<strong class="userinput"><code>:# ssh worker1
+</code></strong>
+:# docker swarm join \
+    --token SWMTKN-1-49nj1cmql0jkz5s954yi3oex3nedyz0fb0xx14ie39trti4wxv- \
+    8vxv8rssmk743ojnwacrr2e7c \
+    {MANAGER-IP}:2377
+<strong class="userinput"><code>
+<code class="computeroutput">
+This node joined a swarm as a worker.
+</code>
+</code></strong>
+</pre></div></div><br class="example-break"><p>Repetiremos el mismo proceso con el segundo <span class="emphasis"><em>worker</em></span>.</p></li><li class="step"><p>
+Bien, una vez que tengamos los dos workers y el manager sincronizados validaremos que el manager ve los dos workers.
+</p><div class="example"><a name="d0e1059"></a><p class="title"><b>Ejemplo 8.6. Validar cluster</b></p><div class="example-contents"><p>Desde el nodo <span class="emphasis"><em>manager</em></span> teclearemos el siguiente comando:</p><pre class="screen">
+<strong class="userinput"><code>
+:# docker node ls
+</code></strong>
+<code class="computeroutput">
+ID                           HOSTNAME               STATUS  AVAILABILITY  MANAGER STATUS
+40me02insrtg4xxx64hucetw3    worker2.localdomain    Ready   Active        
+827xewu2yffsrmdhfm9qbur4n *  manager                Ready   Active        Leader
+e6i5cgwnvmlavdsljv4qpy29w    localhost.localdomain  Ready   Active        
+</code>
+</pre></div></div><br class="example-break"><p>Observaremos que el nodo manager tiene un asterisco, esto indica que es el lider del cluster.</p><p>Tambi&eacute;n validaremos que los nodoes worker estan <span class="emphasis"><em>Ready</em></span> y <span class="emphasis"><em>Active</em></span> en las columnas STATUS y AVAILABILTY.</p></li></ol></div></div></body></html>

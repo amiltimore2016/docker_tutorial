@@ -1,0 +1,32 @@
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+   <title>Cap&iacute;tulo 1. Introducci&oacute;n</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1"><link rel="home" href="index.html" title="Tutorial de Docker"><link rel="up" href="index.html" title="Tutorial de Docker"><link rel="prev" href="index.html" title="Tutorial de Docker"><link rel="next" href="ch02.html" title="Cap&iacute;tulo 2. Primeros pasos, docker corriendo"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a name="d0e53"></a>Cap&iacute;tulo 1. Introducci&oacute;n</h1></div></div></div><p>
+		Cuando hablamos de contenedores debemos entender cual era la necesidad que dio pie al 
+		desarrollo de dockers.
+		</p><p>
+		
+		Las tecnolog&iacute;as como lxc, chroots, cgroups devienen de la necesidad de poder ejecutar espacios 
+		de usuarios separados de una forma segura y r&aacute;pida.</p><p> P.ej. muchas instalaciones de bind y http 
+		se ejecutan desde chroots con el fin de confinar y aislar ataques maliciosos a estos servicios.
+		</p><p>
+		Paralelamente, los desarrolladores de aplicaciones gnu/Linux necesitaban entornos de 
+		compilaci&oacute;n nativos en los cuales testear su c&oacute;digo.</p><p> 
+		Las distros tipo Debian ofrecen un entorno llamado <span class="productname">debootstrap</span>  
+		y los entornos de redhat ofrecen un servicio de chroot llamado <span class="productname">mock</span>. 
+		</p><p>
+		Podemos considerar entonces que docker es una evoluci&oacute;n de estas necesidades. 
+		Parafraseando a Solomon Hykes,fundador de Docker.com.</p><p> -- La raz&oacute;n por la cual desarrollaron dockers fu&eacute; la creciente 
+		complejidad inherente a los procesos de despliegue de c&oacute;digo en entornos de computaci&oacute;n 
+		productivos. De ah&iacute; surge el potente concepto de generar un contenedor que se pueda desplegar 
+		facilmente en el entorno de producci&oacute;n con todo el c&oacute;digo librerias y dependendencias 
+		necesarias para su correcto funcionamiento.
+		</p><p>
+		Al convertir el docker en un proceso de usuario,  todas las necesidades de software 
+		de este nuevo c&oacute;digo se "contienen" en un solo archivo
+		o imagen docker --  
+		</p><p>
+		En abstracto, podemos visualizar los contenedores como un ejecutable con procesos librerias y espacios de usuario propios que nos 
+		evitan la necesidad de recompilar o reconfigurar la apliaci&oacute;n cada vez que se despliegan en un entorno nuevo.
+		</p><div class="figure"><a name="contenedores"></a><p class="title"><b>Figura 1.1. Contenedores</b></p><div class="figure-contents"><div class="mediaobject"><table border="0" summary="manufactured viewport for HTML img" style="cellpadding: 0; cellspacing: 0;" width="100%"><tr><td><img src="resources/contenedores.png" height="360" alt="Contenedores"></td></tr></table></div></div></div><br class="figure-break"><p>
+		Lo que se pretende con esta <span class="emphasis"><em>mini-guia</em></span> es ense&ntilde;ar al lector a defenderse en un entorno donde se han desplegado dockers.
+		</p></div></body></html>

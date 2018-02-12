@@ -1,0 +1,964 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<book xml:lang="es"  xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xl="http://www.w3.org/1999/xlink">   
+<info>
+<title>Tutorial de Docker</title>
+<subtitle>
+ <org>
+ <orgname>DXC Technology</orgname>
+ <orgdiv>TSB Proyectos</orgdiv>
+ </org>
+ <inlinemediaobject>
+ 		   <imageobject>
+                <imagedata scalefit="1" width="100%" contentdepth="100%" format="PNG"  fileref="resources/docker.png"/>
+            </imageobject>
+        </inlinemediaobject>
+</subtitle>  
+<author>
+<personname>
+<firstname>Antonio Medina </firstname>
+</personname>
+<address>
+<email>antonio-manuel.medina@hpe.com</email>
+</address>
+</author>
+<revhistory>
+
+<revision>
+<revnumber>1.0</revnumber>
+<date>31/01/2018</date>
+<revremark>Primera versión.</revremark>
+</revision>
+<revision>
+<revnumber>1.1</revnumber>
+<date>01/02/2018</date>
+<revremark>Añadido capitulo 7 redes.</revremark>
+</revision>
+<revision>
+<revnumber>1.2</revnumber>
+<date>07/02/2018</date>
+<revremark>Añadido capitulo 8 swarms.</revremark>
+</revision>
+</revhistory>
+</info>
+	<chapter>
+	<title>Introducción</title>
+		<para>
+		Cuando hablamos de contenedores debemos entender cual era la necesidad que dio pie al 
+		desarrollo de dockers.
+		</para>
+		<para>
+		
+		Las tecnologías como lxc, chroots, cgroups devienen de la necesidad de poder ejecutar espacios 
+		de usuarios separados de una forma segura y rápida.</para>
+		<para> P.ej. muchas instalaciones de bind y http 
+		se ejecutan desde chroots con el fin de confinar y aislar ataques maliciosos a estos servicios.
+		</para>
+		<para>
+		Paralelamente, los desarrolladores de aplicaciones gnu/Linux necesitaban entornos de 
+		compilación nativos en los cuales testear su código.</para>
+		<para> 
+		Las distros tipo Debian ofrecen un entorno llamado <productname>debootstrap</productname>  
+		y los entornos de redhat ofrecen un servicio de chroot llamado <productname>mock</productname>. 
+		</para>
+		<para>
+		Podemos considerar entonces que docker es una evolución de estas necesidades. 
+		Parafraseando a Solomon Hykes,fundador de Docker.com.</para>
+		<para> -- La razón por la cual desarrollaron dockers fué la creciente 
+		complejidad inherente a los procesos de despliegue de código en entornos de computación 
+		productivos. De ahí surge el potente concepto de generar un contenedor que se pueda desplegar 
+		facilmente en el entorno de producción con todo el código librerias y dependendencias 
+		necesarias para su correcto funcionamiento.
+		</para>
+		<para>
+		Al convertir el docker en un proceso de usuario,  todas las necesidades de software 
+		de este nuevo código se "contienen" en un solo archivo
+		o imagen docker --  
+		</para>
+		<para>
+		En abstracto, podemos visualizar los contenedores como un ejecutable con procesos librerias y espacios de usuario propios que nos 
+		evitan la necesidad de recompilar o reconfigurar la apliación cada vez que se despliegan en un entorno nuevo.
+		</para>
+		<figure xml:id="contenedores">
+			<title>Contenedores</title>
+			<mediaobject>
+				<imageobject>
+					<imagedata  scalefit="1" width="100%" contentdepth="100%" format="PNG" fileref="resources/contenedores.png"/>
+				</imageobject>
+			</mediaobject>
+		</figure>
+		<para>
+		Lo que se pretende con esta <emphasis>mini-guia</emphasis> es enseñar al lector a defenderse en un entorno donde se han desplegado dockers.
+		</para>
+	</chapter>
+	<chapter>
+	<title>Primeros pasos, docker corriendo</title>
+	<para>
+	Antes de nada, la primero que debemos hacer es validar que docker está habilitado y funcionando:
+	</para> 
+	<para>
+	<command>docker ps</command>
+	</para>
+	
+	<example>
+	<title>¿Docker corriendo?</title>
+	<screen>
+    <prompt>
+:# docker ps</prompt>
+    <computeroutput> 
+CONTAINER ID   IMAGE  COMMAND CREATED  STATUS  PORTS NAMES
+    </computeroutput> 
+	</screen>
+	</example>
+	<para>
+	Esta salida nos indicará que el servicio docker está corriendo y activo, sin embargo no hay instancias de imagenes docker corriendo.
+	</para>
+	<para>
+	Una vez que tenemos el servicio docker corriendo podemos validar su correcto funcionamiento lanzando el docker <quote>hello world</quote>
+	</para>
+	<example>
+	<title>Docker test run</title>
+	<screen>
+    <prompt>
+:# docker run hello-world</prompt>
+    <computeroutput> 
+Unable to find image 'hello-world:latest' locally
+latest: Pulling from library/hello-world
+ca4f61b1923c: Pull complete 
+Digest: sha256:66ef312bbac49c39a89aa9bcc3cb4f3c9e7de3788c944158df3ee0176d32b751
+Status: Downloaded newer image for hello-world:latest
+
+Hello from Docker!
+This message shows that your installation appears to be working correctly.
+
+To generate this message, Docker took the following steps:
+    </computeroutput>
+	</screen>
+	</example>
+	<para>
+	El texto es bastante aclarativo; nos indica que el proceso de lanzamiento de instancias docker funciona correctamente.
+	</para>
+	<para>
+	 Con el comando <command>docker ps -a</command> podemos averiguar el historial de instancias docker ejecutadas.
+	</para>
+	
+	<example>
+	<title>Historial de docker</title>
+	<para>
+	<screen>
+ <prompt>
+:# docker ps -a
+ </prompt>   
+    <computeroutput>
+CONTAINER ID    IMAGE         COMMAND   CREATED         STATUS     PORTS  NAMES
+8a1994a60831    hello-world   "/hello"  31 minutes ago  Exited (0)        nifty_liskov
+ 
+    </computeroutput>
+	</screen>
+	</para>
+	</example>
+	<para>
+	Docker usa un sistema de archivos <emphasis>layered</emphasis> o por <emphasis>"capas"</emphasis>. Esto quiere decir que cada vez que 
+	corremos una imagen o container los cambios implementados en esa instancia se escriben al archivo de esa instancia.
+	Para entender un poco mejor este concepto, podemos visualizar un sistema de archivos que solo escribe los cambios incrementales a disco.
+	y cuando termina deja un identificador que nos permite recuperar esos cambios. Este identificador es un hash único que corresponde a
+	la columna <quote>CONTAINER ID</quote>
+	</para>
+	<para>
+	Veamos un ejemplo:
+	</para>
+	<example>
+	<title>Capas de docker</title>
+	<screen> 
+<prompt> 
+:# docker run -it ubuntu  /bin/bash
+</prompt>
+
+<computeroutput> 
+Unable to find image 'ubuntu:latest' locally
+latest: Pulling from library/ubuntu
+8f7c85c2269a: Pull complete 
+9e72e494a6dd: Pull complete 
+3009ec50c887: Pull complete 
+9d5ffccbec91: Pull complete 
+e872a2642ce1: Pull complete 
+Digest: sha256:d3fdf5b1f8e8a155c17d5786280af1f5a04c10e95145a515279cf17abdf0191f
+Status: Downloaded newer image for ubuntu:latest
+<prompt>
+root@5a0bbc6a2b4c:/# exit
+</prompt> 
+    </computeroutput>
+ 	</screen>
+	</example>
+	<para>
+	Este comando nos pondrá en la shell bash de una imagen ubuntu/latest. 
+	Si observamos el proceso atentamente veremos que docker    construye la imagen a base de capas. 
+	Desde la capa <emphasis>thin</emphasis>  8f7c85c2269a 
+    a la capa final que construye el ubuntu <quote>latest</quote> e872a2642ce1.
+	</para>
+	<figure xml:id="layers">
+			<title>Contenedores</title>
+			<mediaobject>
+				<imageobject>
+					<imagedata scalefit="1" width="80%" contentdepth="100%" format="PNG" fileref="resources/sharing-layers.png"/>
+				</imageobject>
+			</mediaobject>
+		</figure>
+	 <para>
+	Al observar el prompt de la consola notaremos que este ha cambiado, ahora es <quote>root@5a0bbc6a2b4c:/#</quote>. En este momento 
+	estamos corriendo el proceso /bin/bash dentro del container ubuntu:latest. Al ejecutar el comando ps veremos que solo hay un proceso 
+	corriendo además del ps, el /bin/bash.
+	 </para>
+	<para>
+	<screen>
+    <prompt>
+root@41e50f369f07:/# ps -afe
+    </prompt>
+    <computeroutput>
+UID        PID  PPID  C STIME TTY          TIME CMD
+root         1     0  0 10:10 ?        00:00:00 /bin/bash
+root        10     1  0 10:11 ?        00:00:00 ps -afe
+	</computeroutput>
+	<prompt>
+root@41e50f369f07:/#</prompt> 
+    </screen>
+    </para>
+    <para>
+    Muy importante recordar que los containers tienen propiedades muy similares a las de un <emphasis>proceso</emphasis> unix. 
+    Por lo tanto cuando ejecutemos el comando <command>exit</command> el contenedor <emphasis>ubuntu:latest</emphasis> 
+    terminará su ejecución.
+    Podemos proceder a salir de docker con el comando <command>exit</command>.
+    </para>
+    <para>
+    si tecleamos el comando <command>docker ps</command> veremos que no hay instancias docker corriendo. Ahora bien si tecleamos
+    el comando <command>docker ps -a</command> veremos en el historial que una imagen corrió recientemente, en mi caso <quote>silly_blackwell</quote>
+    </para>
+    <para>
+	<screen>
+	<prompt>
+:# docker ps -a</prompt>
+   <computeroutput> 
+CONTAINER ID   IMAGE         COMMAND      CREATED          STATUS                     NAMES
+41e50f369f07   ubuntu        "/bin/bash"  6 minutes ago    Exited (0) 4 seconds ago   silly_blackwell
+239bb146bb24   hello-world   "/hello"     20 minutes ago   Exited (0) 20 minutes ago  focused_aryabhata
+    </computeroutput>
+	</screen>
+	</para>
+	</chapter>
+	<chapter>
+	<title>Inspeccionando Contenedores</title>
+	<para>
+	Bien, como los contenedores son procesos de usuario ejecutandose en el sistema, es muy dificil saber lo que ocurre dentro de este
+	contenedor, especialmente cuando no lo hemos lanzado o creado nosotros.</para>
+	<para>Podríamos acoplarnos a las instancias docker corriendo con el comando <command>docker attach {docker instance}</command>
+	Pero esto implicaría eliminar la instancia al teclear la orden exit. Evidentemente no queremos hacer esto en un entorno productivo.
+	</para>
+	<note><para>Es posible desacoplarse de una instancia docker usando la combinación de teclas
+	<command>CTRL-p CTRL-q</command>. Pero si no tenemos cuidado con esta secuencia de comandos nos 
+	podriamos volatilizar la instancia.
+	</para></note>
+	<para>
+	Para atajar este problem podemos recurrir al comando <command>docker inspect {CONTAINER ID}</command>.
+	</para>
+	<example><title>Inspeccionar contenedores</title>
+	<screen>
+<prompt>
+:# docker inspect bebde9e8efe9
+</prompt>
+<computeroutput>
+[
+    {
+        "Id": "bebde9e8efe9fe3db00b2b3dc192881ee0ead7c365e24d1c4a810c2a8767bb73",
+        "Created": "2018-01-24T13:54:03.71350842Z",
+        "Path": "/bin/bash",
+        "Args": [],
+        "State": {
+            "Status": "running",
+            "Running": true,
+            "Paused": false,
+            "Restarting": false,
+            "OOMKilled": false,
+            "Dead": false,
+...
+	
+</computeroutput>
+	</screen>
+	</example>
+	<para>
+	Este comando nos mostrará una ingente cantidad de información en formato JSON array. Si queremos 
+	filtrar estar información para buscar un dato específico como, p.ej la IP podemos añadir el parametro <option>--format</option> 
+	combinado con unos selectores que nos permiten filtrar ciertas variables del array JSON.
+	</para>
+	<screen>
+<prompt>
+:# docker inspect --format='{{range .NetworkSettings.Networks}}\
+	 {{.IPAddress}}{{end}}' bebde9e8efe9
+</prompt>
+<computeroutput>
+172.17.0.2
+</computeroutput>
+	</screen>
+	<para>
+	Otro comando interesante es <command>docker logs</command>; que nos permite ver los logs del 
+	contenedor en ejecución:
+	</para>
+	<example><title>Ver logs del docker</title>
+	<screen>
+	<prompt>
+:# docker run --name test -d busybox sh -c "while true; do $(echo date);\
+sleep 1; done"</prompt>
+<computeroutput>  
+Unable to find image 'busybox:latest' locally
+latest: Pulling from library/busybox
+57310166fe88: Pull complete 
+Digest: sha256:dc57f405b06f43c4573ef0368652af95bafde23ec5430efd202b736909009758
+Status: Downloaded newer image for busybox:latest
+59ccf0c14edeaf5fb9f8f7b1dde393167de43cd59727370e31d75d49ab8d5e3a
+</computeroutput>
+<prompt>
+:# docker ps
+</prompt>
+<computeroutput>
+CONTAINER ID        IMAGE          COMMAND                  CREATED             STATUS              PORTS   NAMES
+59ccf0c14ede        busybox        "sh -c 'while true..."   3 seconds ago       Up 2 seconds                test
+bebde9e8efe9        ubuntu         "/bin/bash"              21 minutes ago      Up 21 minutes               elated_sinoussi
+</computeroutput>
+<prompt>
+:# docker logs 59ccf0c14ede
+</prompt>
+<computeroutput>
+Wed Jan 24 14:15:06 UTC 2018
+Wed Jan 24 14:15:07 UTC 2018
+Wed Jan 24 14:15:08 UTC 2018
+Wed Jan 24 14:15:09 UTC 2018
+...
+	</computeroutput>
+	</screen>
+	</example>
+	<para>
+	Como vemos aquí, el comando <command>docker logs {CONTAINER ID}</command> arroja un log con
+	la actividad del container. 
+	</para>
+	<para>Si realmente queremos acoplarnos a una instancia de docker y tener consola para poder interactuar con el sistema podemos 
+	usar el comando <command>docker exec</command>  </para>
+	
+	<example><title>Acceder a consola instancia docker</title>
+	<screen>
+	<prompt>
+:# docker exec -i -t bebde9e8efe9 /bin/bash
+	</prompt>
+<computeroutput>
+root@bebde9e8efe9:/# 
+</computeroutput>
+	</screen>
+	</example>
+	<para>El cambio en el prompt nos indicará que estamos ejecutando bash en la instancia docker. Cuando hayamos terminado podemos teclear la
+	orden <emphasis>exit</emphasis>. La instancia docker seguirá corriendo desacoplada.</para>
+	</chapter>
+	<chapter><title>Exponiendo puertos del contenedor</title>
+	<para>Para poder acceder a los servicios de una instancia de contenedor es necesario exponer puertos en el lado del host. Para esto podemos usar 
+	el parametro <option>-p</option>.</para>
+	<para>Supongamos que queremos ejecutar una instancia de docker con nginx. Para ello abriremos el puerto 80 en esta instancia redirigiendo las peticiones al puerto
+	internto 8080 del docker que es donde está escuchando el servicio nginx.</para>
+<example><title>Exponer puertos en contenedor</title>
+<screen width="100">
+<prompt>
+:# docker run -i -t -d -p 80:8080 nginx
+</prompt>
+<computeroutput>
+Unable to find image 'nginx:latest' locally
+latest: Pulling from library/nginx
+e7bb522d92ff: Already exists 
+6edc05228666: Pull complete 
+cd866a17e81f: Pull complete 
+Digest: sha256:285b49d42c703fdf257d1e2422765c4ba9d3e37768d6ea83d7fe2043dad6e63d
+Status: Downloaded newer image for nginx:latest
+</computeroutput>
+<prompt>
+:#</prompt>
+<prompt>
+:# docker ps</prompt>
+<computeroutput>
+CONTAINER ID     IMAGE   COMMAND                  CREATED      STATUS        PORTS                          NAMES
+4ec3097884c4     nginx   "nginx -g 'daemon ..."   4 seconds a  Up 2 seconds  80/tcp, 0.0.0.0:80->8080/tcp   goofy_franklin
+</computeroutput>
+</screen>
+</example>
+<para>Observaremos mediante el comando <command>docker ps</command> que la columna  <emphasis>PORTS</emphasis> contiene información 
+describiendo en primer lugar la ip de escucha, seguido por el 
+puerto interno del docker que en este caso se encutra redirigido al puerto 80 del lado del sistema anfitrión. </para>
+<para>Es decir, docker está redirigiendo las peticines externas del puerto 80 en el anfitrion al puerto interno 8080 de esta instancia.</para>
+</chapter>
+	
+<chapter><title>Volumenes y puntos de montaje</title>
+	<para>Para montar un volumen del sistema anfitrión en la instancia docker es conveniente crear un volumen especializado 
+	mediante el comando <command>docker volume create { VOLUME NAME }</command>. </para>
+	<para>Veamos un ejemplo completo</para>
+	<procedure>
+	<step>
+<para>Creamos un volumen llamado  <filename>test-volume</filename>.</para>
+
+
+
+<example floatstyle="boxed"><title>Crear volumen</title>
+<screen>
+<prompt>
+:# docker volume create test-volume</prompt>
+<computeroutput>
+test-volume
+</computeroutput>
+</screen>
+</example>
+<para>Vamos a inspeccionar el volumen <filename>test-volume</filename> y ver como está configurado.</para>
+
+<screen>
+
+<prompt>
+:# docker volume inspect test-volume
+</prompt>
+<computeroutput>
+[
+    {
+        "Driver": "local",
+        "Labels": {},
+        "Mountpoint": "/var/lib/docker/volumes/test-volume/_data",
+        "Name": "test-volume",
+        "Options": {},
+        "Scope": "local"
+    }
+]
+</computeroutput>
+</screen>
+<para>La variable <varname>Mountpoint:</varname> tiene el valor <emphasis>/var/lib/docker/volumes/test-volume/_data</emphasis> indicandonos 
+de esta manera que los datos que encontremos en la carpeta /app de la instancia del contnedor estarán montados en la carpeta <filename>_data</filename>.  </para>
+</step>
+<step>
+<para>Montamos el volumen sobre una imagen nginx.</para>
+<note>
+<para>El parametro <parameter>--mount</parameter> solo está disponible a partir de la versión 17.06 de docker. 
+Si nuestra versión es anterior debemos de usar el 
+parametor <parameter>-v</parameter></para>
+</note>
+<example><title>Montar un volumen</title>
+<para>Para montar el volumén <filename>test-volume</filename> usaremos el parametro <parameter>--mount</parameter> durante la ejecución del
+la instancia del container.</para>
+
+<screen>
+<prompt> 
+:# docker run -i -t -d \
+  --name devtest \
+  --mount source=test-volume,target=/app \
+  nginx:latest
+</prompt>
+<computeroutput>
+3280d2431de6d927adcae5a6c36a6545baf4f91c48134965626fd68ababf2c7
+</computeroutput>
+</screen>
+</example>
+<para>Nos acoplamos a la instancia de docker con el comando <command>docker exec</command>:</para>
+<screen>
+<prompt>
+:# docker exec -i -t 3280d2431de6 /bin/bash
+</prompt>
+<computeroutput>
+root@3280d2431de6:/#
+</computeroutput>
+<prompt>root@3280d2431de6:# cd /app</prompt>
+<prompt>root@3280d2431de6:# touch hola</prompt>
+</screen>
+<para> Si tecleamos la orden <command>exit</command> o abrimos otra terminal y nos cambiamos al directorio <filename>/var/lib/docker/volumes/test-volume/_data</filename>
+veremos que existe un archivo de reciente creación llamado <filename>hola</filename>. 
+</para>
+</step>
+</procedure>
+<para>De esta manera podemos tener un volumen persistente que se puede compartir entre varias instancia de docker.
+</para>	
+</chapter>
+
+	
+	<chapter><title>Nuestra primera aplicación docker</title>
+	<para>Para entender de una manera práctica Docker vamos a crear una instancia de una aplicación web plenamente 
+	funcional.</para>
+	<procedure><title>Aplicación web</title>
+	<step>
+	<para>Primero crearemos una carpeta llamada <filename>docker_web</filename></para>
+	<para>
+	<command>:# mkdir docker_web</command>
+	</para>
+	<para>Nos posicionamos dentro de este direcotorio con un</para>
+	<para> 
+	<command>:# cd docker_web</command>
+	</para>
+	</step>
+	<step>
+	<para>
+	Creamos un archivo Dockefile
+	
+	</para>
+	<para>
+	<command>vim Dockerfile</command>
+	</para>
+	<example xml:id="example1.Dockerfile" floatstyle="boxed">
+			<title>Dockerfile</title>
+			<programlisting language="docker"><xi:include parse="text" href="includes/example1/Dockerfile"><xi:fallback><para>XINCLUDE-ERROR</para></xi:fallback></xi:include></programlisting>
+		</example>
+	
+	</step>
+	<step>
+	<para>Creamos el script de configuración del proxy para que la instancia docker pueda actulizarse e instalar los paquetes necesarios.</para>
+	<para><command>vim 95proxy</command></para>
+	<example xml:id="example1.95proxy">
+			<title>95proxy</title>
+			<programlisting language="bash"><xi:include parse="text" href="includes/example1/95proxy"><xi:fallback><para>XINCLUDE-ERROR</para></xi:fallback></xi:include></programlisting>
+		</example>
+	</step>
+	<step>
+	<para>Creamos el script <filename>resolv.sh</filename> que modificará el <filename>/etc/resolv.conf</filename> para que se adapte a la red con proxy.</para>
+	<example xml:id="example1.resolv.sh">
+			<title>resolv.sh</title>
+			<programlisting language="bash"><xi:include parse="text" href="includes/example1/resolv.sh"><xi:fallback><para>XINCLUDE-ERROR</para></xi:fallback></xi:include></programlisting>
+		</example>
+	</step>
+	<step>
+	<para>Creamos el script <filename>entry.sh</filename> que se encargará de arrancar el apache automaticamente cada vez que creemos una instancia de esta imagen docker.</para>
+	<example xml:id="example1.entry.sh">
+			<title>entry.sh</title>
+			<programlisting language="bash"><xi:include parse="text" href="includes/example1/entry.sh"><xi:fallback><para>XINCLUDE-ERROR</para></xi:fallback></xi:include></programlisting>
+		</example>
+	</step>
+	<step>
+	<para>Lanzamos el proceso de creación del contenedor:</para>
+	<example><title>Creación de un contenedor</title>
+	<screen>
+	<prompt>
+:# docker build .  # El punto es necesario.
+</prompt>
+	<computeroutput>
+Sending build context to Docker daemon 6.656 kB
+Step 1/19 : FROM ubuntu:latest
+ ---> 2a4cca5ac898
+Step 2/19 : MAINTAINER Antonio Medina: 1.0
+ ---> Using cache
+ ---> a8ec2d0857be
+Step 3/19 : ENV HTTP_PROXY 'http://web-proxy.sgp.hp.com:8080'
+ ---> Using cache
+ ---> 162ebdc08bfb
+Step 4/19 : ENV HTTPS_PROXY 'http://web-proxy.sgp.hp.com:8080'
+ ---> Using cache
+ ---> 7486ee9f29ee
+Step 5/19 : COPY resolv.sh /tmp/resolv.sh
+ ---> Using cache
+ ---> 33b81e4888b0
+....
+Step 18/19 : CMD /usr/sbin/apache2 -D FOREGROUND
+ ---> Using cache
+ ---> a10fc4c80db0
+Step 19/19 : ENTRYPOINT /usr/bin/entry.sh
+ ---> Using cache
+ ---> 3977cff94b2d
+Successfully built 3977cff94b2d
+:#
+	</computeroutput>
+	</screen>
+	</example>
+	<para>Tomamos nota del id en <emphasis>Successfully built</emphasis> <quote>3977cff94b2d</quote></para>
+	<para>Este es el id de nuestro build y nos servirá para lanzar nuestro flamante servidor web.</para>
+	</step>
+	<step>
+	<para>Para poder lanzar esta imagen y dejarlo corriendo como si fuera un demonio lo lanzaremos con la opción <option>-d</option> que lanzara la instancia de la imagén en modo desacoplado.</para>
+	<example><title>Lanzar instancia docker desacoplada</title>
+	<screen>
+<prompt>
+:# docker run -t -i -d 3977cff94b2d
+</prompt>
+	<computeroutput>
+a18f7588675f791a3b6f2e93e51f624019adc7a76647f70567c0a82fc48e2d6d
+:#
+	</computeroutput>
+	</screen>
+	</example>
+	<para>Este comando nos devolverá un identificador de la instancia que acabamos de lanzar.</para>
+	<para>Si lanzamos el comando <command>docker ps</command> ahora veremos que hay una instancia con id <emphasis>a18f7588675f</emphasis> corriendo con id de imagen <emphasis>3977cff94b2d</emphasis></para>
+	</step>
+	<step>
+	<para>Ahora debemos validar que esta nueva instancia de ubuntu con apache está realmente atendiendo peticiones en el puerto 80 con el comando wget o curl. Para ello debemos de averiguar
+	que ip tiene esta instancia mediante el comando <command>docker inspect</command> .</para>
+	<example>
+	<title>Docker inspect</title>
+	<screen>
+	<prompt>
+:#docker inspect --format='{{range .NetworkSettings.Networks}}\
+>  {{.IPAddress}}{{end}}' a18f7588675f</prompt>
+	<computeroutput>
+172.17.0.2
+    </computeroutput>
+ 	</screen>
+ 	</example>
+ 	<example><title>Testear servicio web</title>
+ 	<screen>
+<prompt>
+:# wget 172.17.0.2
+</prompt>
+
+<computeroutput>
+--2018-01-29 15:31:40--  http://172.17.0.2/
+Connecting to 172.17.0.2:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 11321 (11K) [text/html]
+Saving to: ‘index.html.1’
+
+index.html.1                       100%[=========>]  11,06K  --.-KB/s    in 0s      
+
+2018-01-29 15:31:40 (171 MB/s) - ‘index.html.1’ saved [11321/11321]
+</computeroutput>
+ 	</screen>
+ 	</example>
+ 	<para>
+ 	Si hacemos un cat del archivo <filename>index.html.1</filename> veremos que es la pagina de inicio de un servidor apache recién instalado.
+ 	</para>
+	</step>
+	<step>
+	<para>Para validar que realmente nos estamos conectando a la instancia de esta imagen vamos a modificar el index.html dentro de la instancia actual.</para>
+	<example><title>Copiar archivo a container</title>
+	<screen>
+	<prompt>
+:# echo "HELLO from container a18f7588675f" > index.html	
+	</prompt>
+	<prompt>
+:# docker cp index.html a18f7588675f:/var/www/html/index.html
+	</prompt>
+
+	</screen>
+
+	</example>
+	<para>En este ejemplo voy a usar elinks, un navegador de texto.</para>
+	<para><prompt>elinks 172.17.0.2</prompt></para>
+	<mediaobject>
+ 		   <imageobject>
+                <imagedata scalefit="1" width="80%" contentdepth="100%" format="PNG"  fileref="resources/hello_container.png"/>
+            </imageobject>
+    </mediaobject>
+	</step>
+	</procedure>
+	</chapter>
+	<chapter><title>Redes en Docker</title>
+	<para>Cuando instalamos docker veremos que se instalan tres redes automaticamente. Para ver las redes disponibles
+	podemos usar el comando <command>docker network ls</command>.</para>
+    	
+	<example><title>Redes por defecto</title>
+	<screen>
+	<prompt>
+:# docker network ls</prompt>
+	<computeroutput>
+NETWORK ID          NAME                DRIVER              SCOPE
+eadfabef9239        bridge              bridge              local
+100f01849e3d        host                host                local
+8ecd0fa3f1c5        none                null                local
+	</computeroutput>
+	</screen>
+	</example>
+	<para>
+	Cuando corremos una instancia docker esta se acopla por defecto en modo bridge a la red
+	<quote>bridge</quote>. Si ejecutamos el comando <command>ip addr</command> desde la consola del servidor
+	veremos que hay un interfaz <emphasis>docker0</emphasis>. Este interfaz virtual puede 
+	considerarse a todos los efectos como un bridge además de ser una puerta de enlace a la red exterior. 
+	</para>
+	<para>Veamos este interfaz:</para>
+	<screen>
+<prompt>
+:# ip a show docker0
+</prompt>
+<computeroutput>
+9: docker0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc noqueue state UP group default 
+    link/ether 02:42:88:66:d0:d5 brd ff:ff:ff:ff:ff:ff
+    inet 172.17.0.1/16 scope global docker0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::42:88ff:fe66:d0d5/64 scope link 
+       valid_lft forever preferred_lft forever
+</computeroutput>
+	</screen>	
+	<para>Como veremos tiene la ip de la puerta de enlace de las instancias docker que hemos creado. 
+	Todas las instancias docker reciben una ip dentro de la red 172.17.0.0/16.</para>
+	<para>
+	Si inspeccionamos la red bridge con un <command>docker network inspect bridge</command> entednderemos
+	la relación de una forma mas clara.
+	</para>
+	<example><title>Inspeccionando red bridge</title>
+	<screen>
+<prompt>
+:# docker network inspect bridge
+</prompt>
+<computeroutput>
+...
+"Internal": false,
+        "Attachable": false,
+        "Containers": {
+            "3280d2431de6d927adcae5a6c36a6545baf4f91c48134965626fd68ababf2c75": {
+                "Name": "devtest",
+                "EndpointID": "d09604798b13f5b4f1a77ed2244e77e3918674da2aff5845d86914dcfe2c22a8",
+                "MacAddress": "02:42:ac:11:00:06",
+                "IPv4Address": "172.17.0.6/16",
+                "IPv6Address": ""
+            },
+            "39f0cade4978e06c45068b795cc1ed596825b6df088aa6100103f91c3979450b": {
+                "Name": "nervous_wozniak",
+                "EndpointID": "df173cf1b4bdf5381c6156d0b350e844d93ab251d90d0668baeb5e659534f669",
+                "MacAddress": "02:42:ac:11:00:03",
+                "IPv4Address": "172.17.0.3/16",
+                "IPv6Address": ""
+            },
+            "4ec3097884c40d58ca093d1c83fd6a6fe3382b8368f14553e726a882ce6efe7e": {
+                "Name": "goofy_franklin",
+                "EndpointID": "bb2966f797c3c3158d79eb9f101ca9c3a5d1df29681514aadbeb2f800bfad7da",
+                "MacAddress": "02:42:ac:11:00:05",
+                "IPv4Address": "172.17.0.5/16",
+                "IPv6Address": ""
+            },
+...
+</computeroutput>
+	</screen>
+	</example>
+	<para>Veremos que nuestras instancias docker están conectados a este bridge y 
+	las ips asignadas a cada una de ellass.
+	</para>
+	<para>Si observamos de nuevo la info del <command>docker network inspect</command> veremos
+	que hay un elemento del array JSON llamado <quote>IPAM</quote>. Este elemento define la configuración
+	del tipo de conexión la red y la puerta de enlace.</para>
+	<screen>
+	<computeroutput>
+IPAM": {
+            "Driver": "default",
+            "Options": null,
+            "Config": [
+                {
+                    "Subnet": "172.17.0.0/16",
+                    "Gateway": "172.17.0.1"
+                }
+            ]
+        },
+	</computeroutput>
+	</screen>
+	<para>En definitiva la conexión al exterior es en modo <quote>NAT</quote>.</para>
+	<section><title>Conectar instancia a una red especifica</title>
+	<para>Muchas veces se hace necesario crear redes especializadas tipo <emphasis>overlay</emphasis> o
+	<emphasis>vxlan</emphasis> ya sea mediante un bridge virtual o físico. Para este tipo de escenario
+	se hace necesario definir a la instancia docker a que bridge conectarse. </para>
+	<para>Veamos un ejemplo de conexión a una red personalizad.</para>
+	<example>
+	<title>Conectarse a red personalizda.</title>
+	<para>el comando <command>docker run</command> acepta el parametro <parameter>--net {NET</parameter> para 
+	definir la red a la que conectarnos.</para>
+	<screen>
+<prompt>
+:# docker run -it --net host -p 80  httpd  /bin/bash
+</prompt>
+<computeroutput>
+root@HOST:#
+</computeroutput>
+	</screen>
+	<para>En este momento estamos en la shell bash de la instancia docker de la imagen httpd.</para>
+	<para>al ser una conexión tipo <quote>host</quote> nos muestra en el prompt el nombre del anfitrión. Vamos a
+	lanzar el servicio httpd en background.</para>
+	<screen>
+<prompt>
+:# /usr/bin/httpd-foreground &amp;
+</prompt>
+<computeroutput>
+# AH00558: httpd: Could not reliably determine the server's 
+fully qualified domain name, using 127.0.1.1. Set the 
+'ServerName' directive globally to suppress this message
+...
+</computeroutput>
+	</screen>
+	<para>
+	Ahora abriremos una consola extra en el servidor anfitrión y usaremos elinks para ver si el servicio 
+	httpd está expuesto en el puerto 80. P.ej. Si la ip de nuestro anfitrión es 10.0.2.15 podemos usar el 
+	navegador de text elinks.
+	</para>
+	<para><prompt>:# elinks 10.0.2.15</prompt> </para>
+	<figure xml:id="networkhost">
+			<title>Contenedores</title>
+			<mediaobject>
+				<imageobject>
+					<imagedata scalefit="1" width="80%" contentdepth="100%" format="PNG" fileref="resources/network-host.png"/>
+				</imageobject>
+			</mediaobject>
+		</figure>
+	</example>
+	
+	</section>
+	<section><title>Otros tipos de redes</title>
+	<para>Al ejecutar el comando  <command>docker network ls</command> se nos han mostrado dos redes extras: 
+	<emphasis>none</emphasis> y <emphasis>host</emphasis>. Describiré brevemente estas dos redes.
+	</para>
+	<orderedlist>
+	<listitem> <para>La red <emphasis>none</emphasis> se puede considerar una red <quote>null</quote> donde la
+	instancia docker no tendría conectividad externa. El comando <command>docker network inspect none</command>
+	nos mostraría que las instancias conectadas a esta red no tienen IP. 
+	</para>
+	</listitem>
+	<listitem>
+	<para>
+	La red <emphasis>host</emphasis> es una red donde los puertos asignados a la instancia docker se asignarian
+	directamente a la ip del servidor anfitrión. Si lanzaramos una instancia docker de apache escuchando
+	en el puerto 80 sería como una instancia apache corriendo nativamente en nuestro servidor anfitrión.
+	</para>
+	</listitem>
+	</orderedlist>
+	<note><para>Es interesante tener en cuenta que docker usa <productname>iptables</productname> para 
+	redirigir puertos desde la maquina anfitrión a la instancia que ha solicitado un mapeo de puertos.</para></note>
+	</section>
+	</chapter>
+
+<chapter><title>Docker Swarms</title>
+<para>Todas las versiones actuales de <productname>Docker</productname> incluyen el modo <emphasis>swarm</emphasis> por defecto.</para>
+<para>Si usas una versión anterior a la 1.12.0 puedes usar el <productname>Standalone Swarm</productname> pero no es algo que el fabricante recomiende. </para>
+<section><title>Que es un <productname>Swarm?</productname></title>
+<para>La pagina oficial de Docker define un swarm como multiples nodos docker ejecutandose en modo swarm. Algunos de estos nodos estarán corriendo como 
+<emphasis>workers</emphasis> y otros nodos estarán corriendo como <emphasis>managers</emphasis> y en algunos escenarios ciertos nodos correran como <emphasis>managers</emphasis> y <emphasis>workers</emphasis>
+simultaneamente.</para>
+<para>Hay que considerar que los clusters tipo swarm se construyen sobre definiciones de <quote>estados optimos de funcionamiento.</quote> Es decir, cada servicio 
+tiene establecido un número deseado de replicas, redes, almacenamiento y puertos. <productname>Docker</productname> se encarga de mantener este estado deseado.  
+</para>
+<para>Si perdemos uno de los nodos, el Docker manager debería de encargarse de levantar las instancias faltantes en otro nodo que tenga los recursos suficientes.</para>
+<figure xml:id="swarm-mode">
+			<title>Docker Swarms</title>
+			<mediaobject>
+				<imageobject>
+					<imagedata scalefit="1" width="80%" contentdepth="100%" format="PNG" fileref="resources/swarm_reload.png"/>
+				</imageobject>
+			</mediaobject>
+		</figure>
+
+</section>
+<section><title>Preparando el entorno Docker Swarm</title>
+<para>Para crear un entorno swarm necesitamos los siguiente elementos:</para>
+<itemizedlist>
+<listitem><para>3 sistemas linux.</para></listitem>
+<listitem><para>Docker engine versión 1.12 o superior.</para></listitem>
+<listitem><para>La dirección IP del <emphasis>manager</emphasis>.</para></listitem>
+<listitem><para>Puertos abiertos entre los 3 sistemas</para></listitem>
+</itemizedlist>
+<procedure><title>Procedimiento</title>
+<step><para>Instala docker engine en los tres servidores linux. Valida que el servicio docker está levantando y corriendo.</para></step>
+<step><para>Obtén la IP del <emphasis>manager</emphasis> con un ifconfig.</para></step>
+<step><para>Valida que los siguientes puertos son accesibles para todos los servidores:</para>
+<itemizedlist>
+<listitem><para>TCP puerto 2377 para comunicaciones de gestión del cluster</para></listitem>
+<listitem><para>TCP/UDP puerto 7946  para comunicación entre nodos.</para></listitem>
+<listitem><para>UDP puerto 4789 para trafico de redes <emphasis>overlay</emphasis>.</para></listitem>
+</itemizedlist>
+</step>
+</procedure>
+
+</section>
+<section><title>Creando el Swarm</title>
+<para>Una vez que hemos preparado todo el entorno procederemos a crear el <emphasis>Swarm</emphasis>.</para>
+<para>Una vez mas validaremos que el demonio docker está corriendo.</para>
+<procedure>
+<step><para>Nos conectamos al <emphasis>manager</emphasis> mediante ssh.</para>
+<example>
+<screen>
+<userinput>
+:# ssh manager</userinput>
+</screen>
+</example>
+</step>
+<step>
+<para>Creamos el docker swarm con el siguiente comando:</para>
+<example><title>Iniciar el swarm</title>
+<screen>
+<userinput>
+:# docker swarm init --advertise-addr {MANAGER-IP}</userinput>
+<computeroutput>
+Swarm initialized: current node (dxn1zf6l61qsb1josjja83ngz) is now a manager.
+
+To add a worker to this swarm, run the following command:
+
+    docker swarm join \
+    --token SWMTKN-1-49nj1cmql0jkz5s954yi3oex3nedyz0fb0xx14ie39trti4wxv- \
+    8vxv8rssmk743ojnwacrr2e7c \
+    {MANAGER-IP}:2377
+
+To add a manager to this swarm, run 'docker swarm join-token manager'
+and follow the instructions.
+
+</computeroutput>
+</screen>
+</example>
+<para>Donde MANAGER-IP corresponde a la ip del servidor linux que hemos designado como manager.</para>
+</step>
+<step>
+<para>Validamos estado del nodo.
+</para>
+<example><title>Validar estado del Nodo</title>
+<para>Para validar que el nodo manager está activo tecleamos el siguiente comando:</para>
+<screen>
+<userinput>
+:# docker info | grep "Is Manager"
+</userinput>
+<computeroutput>
+Is Manager: true
+</computeroutput>
+</screen>
+</example>
+</step>
+<step>
+<para>Validamos estado del cluster</para>
+<example><title>Validar Swarm Manager</title>
+<para>Desde el manager lanzamos el siguiente comando:</para>
+<screen>
+<userinput>:# docker node ls</userinput>
+<computeroutput>
+ID                           HOSTNAME               STATUS  AVAILABILITY  MANAGER STATUS
+827xewu2yffsrmdhfm9qbur4n *  manager                Ready   Active        Leader
+
+
+</computeroutput>
+</screen>
+</example>
+</step>
+<step>
+<para>Nos conectamos a los nodos <emphasis>worker</emphasis> y los añadimos al <emphasis>swarm</emphasis>.</para>
+<example><title>Añadir workers</title>
+<screen>
+<userinput>:# ssh worker1
+</userinput>
+:# docker swarm join \
+    --token SWMTKN-1-49nj1cmql0jkz5s954yi3oex3nedyz0fb0xx14ie39trti4wxv- \
+    8vxv8rssmk743ojnwacrr2e7c \
+    {MANAGER-IP}:2377
+<userinput>
+<computeroutput>
+This node joined a swarm as a worker.
+</computeroutput>
+</userinput>
+</screen>
+</example>
+<para>Repetiremos el mismo proceso con el segundo <emphasis>worker</emphasis>.</para>
+</step>
+<step>
+<para>
+Bien, una vez que tengamos los dos workers y el manager sincronizados validaremos que el manager ve los dos workers.
+</para>
+<example><title>Validar cluster</title>
+<para>Desde el nodo <emphasis>manager</emphasis> teclearemos el siguiente comando:</para>
+<screen>
+<userinput>
+:# docker node ls
+</userinput>
+<computeroutput>
+ID                           HOSTNAME               STATUS  AVAILABILITY  MANAGER STATUS
+40me02insrtg4xxx64hucetw3    worker2.localdomain    Ready   Active        
+827xewu2yffsrmdhfm9qbur4n *  manager                Ready   Active        Leader
+e6i5cgwnvmlavdsljv4qpy29w    localhost.localdomain  Ready   Active        
+</computeroutput>
+</screen>
+</example>
+<para>Observaremos que el nodo manager tiene un asterisco, esto indica que es el lider del cluster.</para>
+<para>También validaremos que los nodoes worker estan <emphasis>Ready</emphasis> y <emphasis>Active</emphasis> en las columnas STATUS y AVAILABILTY.</para>
+</step>
+</procedure>
+</section>
+</chapter>
+	
+</book>

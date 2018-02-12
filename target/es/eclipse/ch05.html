@@ -1,0 +1,53 @@
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+   <title>Cap&iacute;tulo 5. Volumenes y puntos de montaje</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1"><link rel="home" href="index.html" title="Tutorial de Docker"><link rel="up" href="index.html" title="Tutorial de Docker"><link rel="prev" href="ch04.html" title="Cap&iacute;tulo 4. Exponiendo puertos del contenedor"><link rel="next" href="ch06.html" title="Cap&iacute;tulo 6. Nuestra primera aplicaci&oacute;n docker"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a name="d0e386"></a>Cap&iacute;tulo 5. Volumenes y puntos de montaje</h1></div></div></div><p>Para montar un volumen del sistema anfitri&oacute;n en la instancia docker es conveniente crear un volumen especializado 
+	mediante el comando <span class="command"><strong>docker volume create { VOLUME NAME }</strong></span>. </p><p>Veamos un ejemplo completo</p><div class="procedure"><ol class="procedure" type="1"><li class="step"><p>Creamos un volumen llamado  <code class="filename">test-volume</code>.</p><div class="example-float"><div class="example"><a name="d0e403"></a><p class="title"><b>Ejemplo 5.1. Crear volumen</b></p><div class="example-contents"><pre class="screen">
+<code class="prompt">
+:# docker volume create test-volume</code>
+<code class="computeroutput">
+test-volume
+</code>
+</pre></div></div><br class="example-break"></div><p>Vamos a inspeccionar el volumen <code class="filename">test-volume</code> y ver como est&aacute; configurado.</p><pre class="screen">
+
+<code class="prompt">
+:# docker volume inspect test-volume
+</code>
+<code class="computeroutput">
+[
+    {
+        "Driver": "local",
+        "Labels": {},
+        "Mountpoint": "/var/lib/docker/volumes/test-volume/_data",
+        "Name": "test-volume",
+        "Options": {},
+        "Scope": "local"
+    }
+]
+</code>
+</pre><p>La variable <code class="varname">Mountpoint:</code> tiene el valor <span class="emphasis"><em>/var/lib/docker/volumes/test-volume/_data</em></span> indicandonos 
+de esta manera que los datos que encontremos en la carpeta /app de la instancia del contnedor estar&aacute;n montados en la carpeta <code class="filename">_data</code>.  </p></li><li class="step"><p>Montamos el volumen sobre una imagen nginx.</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Nota]" src="assets/images/note.svg"></td><th align="left">Nota</th></tr><tr><td align="left" valign="top"><p>El parametro <em class="parameter"><code>--mount</code></em> solo est&aacute; disponible a partir de la versi&oacute;n 17.06 de docker. 
+Si nuestra versi&oacute;n es anterior debemos de usar el 
+parametor <em class="parameter"><code>-v</code></em></p></td></tr></table></div><div class="example"><a name="d0e449"></a><p class="title"><b>Ejemplo 5.2. Montar un volumen</b></p><div class="example-contents"><p>Para montar el volum&eacute;n <code class="filename">test-volume</code> usaremos el parametro <em class="parameter"><code>--mount</code></em> durante la ejecuci&oacute;n del
+la instancia del container.</p><pre class="screen">
+<code class="prompt"> 
+:# docker run -i -t -d \
+  --name devtest \
+  --mount source=test-volume,target=/app \
+  nginx:latest
+</code>
+<code class="computeroutput">
+3280d2431de6d927adcae5a6c36a6545baf4f91c48134965626fd68ababf2c7
+</code>
+</pre></div></div><br class="example-break"><p>Nos acoplamos a la instancia de docker con el comando <span class="command"><strong>docker exec</strong></span>:</p><pre class="screen">
+<code class="prompt">
+:# docker exec -i -t 3280d2431de6 /bin/bash
+</code>
+<code class="computeroutput">
+root@3280d2431de6:/#
+</code>
+<code class="prompt">root@3280d2431de6:# cd /app</code>
+<code class="prompt">root@3280d2431de6:# touch hola</code>
+</pre><p> Si tecleamos la orden <span class="command"><strong>exit</strong></span> o abrimos otra terminal y nos cambiamos al directorio <code class="filename">/var/lib/docker/volumes/test-volume/_data</code>
+veremos que existe un archivo de reciente creaci&oacute;n llamado <code class="filename">hola</code>. 
+</p></li></ol></div><p>De esta manera podemos tener un volumen persistente que se puede compartir entre varias instancia de docker.
+</p></div></body></html>
